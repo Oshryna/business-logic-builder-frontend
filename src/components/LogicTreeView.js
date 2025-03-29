@@ -25,27 +25,28 @@ import { styled } from "@mui/material/styles";
 // Styled components for the modern tree
 const TreeContainer = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
-  borderRadius: theme.spacing(2),
+  borderRadius: theme.shape.borderRadius,
   maxHeight: "70vh",
   overflow: "auto",
   backgroundColor: alpha(theme.palette.background.paper, 0.92),
   backdropFilter: "blur(10px)",
-  boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+  boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
   transition: "all 0.3s ease",
   scrollbarWidth: "thin",
   "&::-webkit-scrollbar": {
-    width: "8px"
+    width: "8px",
+    height: "8px"
   },
   "&::-webkit-scrollbar-track": {
-    background: alpha(theme.palette.background.default, 0.5),
+    background: theme.palette.grey[100],
     borderRadius: "10px"
   },
   "&::-webkit-scrollbar-thumb": {
-    background: alpha(theme.palette.primary.main, 0.3),
+    background: theme.palette.grey[300],
     borderRadius: "10px",
     "&:hover": {
-      background: alpha(theme.palette.primary.main, 0.5)
+      background: theme.palette.grey[400]
     }
   }
 }));
@@ -57,43 +58,48 @@ const NodeContainer = styled(Box)(({ theme, depth = 0 }) => ({
   paddingBottom: theme.spacing(1.5)
 }));
 
-const TreeNodeCard = styled(Paper)(({ theme, isCondition, isExpanded }) => ({
-  padding: theme.spacing(1.5, 2),
-  borderRadius: theme.spacing(1.5),
-  position: "relative",
-  backgroundColor: alpha(
-    isCondition ? theme.palette.info.light : theme.palette.primary.light,
-    0.12
-  ),
-  boxShadow: isExpanded
-    ? `0 4px 12px ${alpha(
-        isCondition ? theme.palette.info.main : theme.palette.primary.main,
-        0.2
-      )}`
-    : "none",
-  border: `1px solid ${alpha(
-    isCondition ? theme.palette.info.main : theme.palette.primary.main,
-    0.3
-  )}`,
-  backdropFilter: "blur(4px)",
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  "&:hover": {
-    boxShadow: `0 5px 15px ${alpha(
+const TreeNodeCard = styled(Paper)(({ theme, isCondition, isExpanded }) => {
+  const getGradient = () => {
+    if (isCondition) {
+      return `linear-gradient(145deg, ${alpha(
+        theme.palette.info.main,
+        0.05
+      )}, ${alpha(theme.palette.info.light, 0.02)})`;
+    } else {
+      return `linear-gradient(145deg, ${alpha(
+        theme.palette.primary.main,
+        0.05
+      )}, ${alpha(theme.palette.primary.light, 0.02)})`;
+    }
+  };
+
+  return {
+    padding: theme.spacing(1.5, 2),
+    borderRadius: theme.shape.borderRadius,
+    position: "relative",
+    background: getGradient(),
+    boxShadow: isExpanded ? theme.shadows[1] : "none",
+    border: `1px solid ${alpha(
       isCondition ? theme.palette.info.main : theme.palette.primary.main,
-      0.25
+      0.15
     )}`,
-    transform: "translateY(-2px)",
-    borderColor: alpha(
-      isCondition ? theme.palette.info.main : theme.palette.primary.main,
-      0.5
-    )
-  },
-  animation: "fadeIn 0.4s ease-out",
-  "@keyframes fadeIn": {
-    from: { opacity: 0, transform: "translateY(10px)" },
-    to: { opacity: 1, transform: "translateY(0)" }
-  }
-}));
+    backdropFilter: "blur(4px)",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    "&:hover": {
+      boxShadow: theme.shadows[2],
+      transform: "translateY(-2px)",
+      borderColor: alpha(
+        isCondition ? theme.palette.info.main : theme.palette.primary.main,
+        0.3
+      )
+    },
+    animation: "fadeIn 0.4s ease-out",
+    "@keyframes fadeIn": {
+      from: { opacity: 0, transform: "translateY(10px)" },
+      to: { opacity: 1, transform: "translateY(0)" }
+    }
+  };
+});
 
 const NodeConnector = styled(Box)(
   ({ theme, isCondition, isFirst, isLast }) => ({
@@ -102,7 +108,7 @@ const NodeConnector = styled(Box)(
     width: 0,
     borderLeft: `2px dashed ${alpha(
       isCondition ? theme.palette.info.main : theme.palette.primary.main,
-      0.5
+      0.3
     )}`,
     opacity: 0.8,
     top: isFirst ? 24 : 0,
@@ -114,23 +120,17 @@ const NodeConnector = styled(Box)(
           content: '""',
           position: "absolute",
           top: 0,
-          left: -5,
-          width: 12,
-          height: 12,
+          left: -4,
+          width: 8,
+          height: 8,
           borderRadius: "50%",
           backgroundColor: alpha(
             isCondition ? theme.palette.info.main : theme.palette.primary.main,
-            0.2
+            0.1
           ),
           border: `2px solid ${alpha(
             isCondition ? theme.palette.info.main : theme.palette.primary.main,
-            0.6
-          )}`,
-          boxShadow: `0 0 0 3px ${alpha(
-            isCondition
-              ? theme.palette.info.light
-              : theme.palette.primary.light,
-            0.1
+            0.4
           )}`
         }
       : {},
@@ -143,7 +143,7 @@ const NodeConnector = styled(Box)(
       height: 2,
       backgroundColor: alpha(
         isCondition ? theme.palette.info.main : theme.palette.primary.main,
-        0.5
+        0.3
       )
     }
   })
@@ -153,9 +153,9 @@ const OperatorChip = styled(Chip)(({ theme, type }) => {
   const getColor = () => {
     switch (type) {
       case "AND":
-        return theme.palette.success.main;
+        return theme.palette.primary.main;
       case "OR":
-        return theme.palette.warning.main;
+        return theme.palette.secondary.main;
       case "NOT":
         return theme.palette.error.main;
       default:
@@ -164,30 +164,29 @@ const OperatorChip = styled(Chip)(({ theme, type }) => {
   };
 
   return {
-    backgroundColor: alpha(getColor(), 0.9),
-    color: "#fff",
-    fontWeight: "700",
+    backgroundColor: alpha(getColor(), 0.1),
+    color: getColor(),
+    fontWeight: 600,
     marginRight: theme.spacing(1),
     transition: "all 0.2s ease",
-    boxShadow: `0 2px 4px ${alpha(getColor(), 0.3)}`,
+    border: `1px solid ${alpha(getColor(), 0.2)}`,
     "&:hover": {
-      transform: "scale(1.05)",
-      boxShadow: `0 3px 6px ${alpha(getColor(), 0.4)}`
+      backgroundColor: alpha(getColor(), 0.15)
     }
   };
 });
 
 const ValueChip = styled(Chip)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.secondary.light, 0.15),
+  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
   color: theme.palette.secondary.dark,
   marginLeft: theme.spacing(1),
-  borderRadius: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
+  fontWeight: 600,
   transition: "all 0.2s ease",
   border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
   backdropFilter: "blur(4px)",
   "&:hover": {
-    backgroundColor: alpha(theme.palette.secondary.light, 0.25),
-    boxShadow: `0 2px 4px ${alpha(theme.palette.secondary.main, 0.2)}`
+    backgroundColor: alpha(theme.palette.secondary.main, 0.15)
   }
 }));
 
@@ -198,14 +197,14 @@ const FieldChip = styled(Box)(({ theme }) => ({
   fontSize: "0.85rem",
   backgroundColor: alpha(theme.palette.background.default, 0.6),
   padding: theme.spacing(0.5, 1.5),
-  borderRadius: theme.spacing(1),
+  borderRadius: theme.shape.borderRadius,
   marginRight: theme.spacing(1.5),
   borderLeft: `3px solid ${alpha(theme.palette.primary.main, 0.5)}`,
   transition: "all 0.2s ease",
-  boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.08)}`,
+  boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.05)}`,
   "&:hover": {
     backgroundColor: alpha(theme.palette.background.default, 0.8),
-    boxShadow: `0 2px 5px ${alpha(theme.palette.common.black, 0.12)}`
+    boxShadow: `0 2px 5px ${alpha(theme.palette.common.black, 0.08)}`
   }
 }));
 
@@ -227,11 +226,19 @@ const OperatorLabel = styled(Typography)(({ theme, type }) => {
       case "ne":
         return theme.palette.error.main;
       case "gt":
-        return theme.palette.info.dark;
       case "lt":
         return theme.palette.info.dark;
+      case "ge":
+      case "le":
+        return theme.palette.info.main;
       case "contains":
         return theme.palette.warning.dark;
+      case "startswith":
+      case "endswith":
+        return theme.palette.warning.main;
+      case "any":
+      case "all":
+        return theme.palette.primary.dark;
       default:
         return theme.palette.text.secondary;
     }
@@ -244,10 +251,10 @@ const OperatorLabel = styled(Typography)(({ theme, type }) => {
     color: getColor(),
     marginRight: theme.spacing(1.5),
     position: "relative",
-    padding: theme.spacing(0.5, 1.5, 0.5, 1.5),
-    borderRadius: theme.spacing(1),
-    border: `1px solid ${alpha(getColor(), 0.4)}`,
-    backgroundColor: alpha(getColor(), 0.1),
+    padding: theme.spacing(0.5, 1.5),
+    borderRadius: theme.shape.borderRadius,
+    border: `1px solid ${alpha(getColor(), 0.3)}`,
+    backgroundColor: alpha(getColor(), 0.05),
     "&::before": {
       content: '""',
       position: "absolute",
@@ -256,28 +263,37 @@ const OperatorLabel = styled(Typography)(({ theme, type }) => {
       width: 16,
       height: 2,
       transform: "translateY(-50%)",
-      backgroundColor: alpha(getColor(), 0.4)
+      backgroundColor: alpha(getColor(), 0.3)
     }
   };
 });
 
-const LogicTreeView = ({ businessLogic }) => {
+const ActionButton = styled(Button)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius,
+  fontWeight: 600,
+  fontSize: "0.875rem",
+  textTransform: "none",
+  boxShadow: "none"
+}));
+
+const LogicTreeView = ({ businessLogic, logic }) => {
   const theme = useTheme();
+  // Use businessLogic prop if provided, otherwise use logic prop
+  const logicData = businessLogic || logic;
+
   // Map to store expanded state for each node
   const [expandedNodes, setExpandedNodes] = useState({});
 
   useEffect(() => {
     // Auto-expand the first level by default
-    if (businessLogic && businessLogic.type) {
-      const nodeId = `${businessLogic.type}-${
-        JSON.stringify(businessLogic).length
-      }`;
+    if (logicData && logicData.type) {
+      const nodeId = `${logicData.type}-${JSON.stringify(logicData).length}`;
       setExpandedNodes((prev) => ({
         ...prev,
         [nodeId]: true
       }));
     }
-  }, [businessLogic]);
+  }, [logicData]);
 
   // Toggle expansion state for a node
   const toggleNodeExpansion = (nodeId) => {
@@ -300,8 +316,8 @@ const LogicTreeView = ({ businessLogic }) => {
       }
     };
 
-    if (businessLogic) {
-      traverse(businessLogic);
+    if (logicData) {
+      traverse(logicData);
     }
 
     setExpandedNodes(allExpanded);
@@ -320,8 +336,8 @@ const LogicTreeView = ({ businessLogic }) => {
       }
     };
 
-    if (businessLogic) {
-      traverse(businessLogic);
+    if (logicData) {
+      traverse(logicData);
     }
 
     setExpandedNodes(allCollapsed);
@@ -366,7 +382,11 @@ const LogicTreeView = ({ businessLogic }) => {
                     label={condition.type}
                     size="small"
                   />
-                  <Typography variant="body2" fontWeight={500}>
+                  <Typography
+                    variant="body2"
+                    fontWeight={500}
+                    color="text.secondary"
+                  >
                     {condition.conditions.length} condition
                     {condition.conditions.length !== 1 ? "s" : ""}
                   </Typography>
@@ -430,8 +450,20 @@ const LogicTreeView = ({ businessLogic }) => {
             return ">";
           case "lt":
             return "<";
+          case "ge":
+            return "≥";
+          case "le":
+            return "≤";
           case "contains":
             return "contains";
+          case "startswith":
+            return "starts with";
+          case "endswith":
+            return "ends with";
+          case "any":
+            return "any";
+          case "all":
+            return "all";
           default:
             return op;
         }
@@ -496,7 +528,7 @@ const LogicTreeView = ({ businessLogic }) => {
   };
 
   return (
-    <TreeContainer elevation={3}>
+    <TreeContainer elevation={0}>
       <Box
         display="flex"
         alignItems="center"
@@ -506,20 +538,21 @@ const LogicTreeView = ({ businessLogic }) => {
         <Box display="flex" alignItems="center">
           <Typography
             variant="h6"
-            color="primary"
-            fontWeight="bold"
+            fontWeight={700}
             sx={{
               display: "flex",
               alignItems: "center",
+              background: "linear-gradient(to right, #111827, #4B5563)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
               "&::before": {
                 content: '""',
                 display: "inline-block",
-                width: "10px",
-                height: "10px",
+                width: "8px",
+                height: "8px",
                 borderRadius: "50%",
-                backgroundColor: theme.palette.primary.main,
-                marginRight: "8px",
-                boxShadow: `0 0 0 4px ${alpha(theme.palette.primary.main, 0.2)}`
+                backgroundImage: "linear-gradient(135deg, #6366F1, #818CF8)",
+                marginRight: "10px"
               }
             }}
           >
@@ -530,91 +563,57 @@ const LogicTreeView = ({ businessLogic }) => {
             arrow
           >
             <IconButton size="small" sx={{ ml: 1 }}>
-              <InfoIcon fontSize="small" />
+              <InfoIcon fontSize="small" color="action" />
             </IconButton>
           </Tooltip>
         </Box>
 
         <Box>
-          <Tooltip title="Expand All" arrow>
-            <Button
-              startIcon={<ExpandAllIcon />}
-              size="small"
-              variant="outlined"
-              color="primary"
-              onClick={expandAll}
-              sx={{
-                mr: 1,
-                borderRadius: 2,
-                boxShadow: `0 2px 4px ${alpha(
-                  theme.palette.primary.main,
-                  0.2
-                )}`,
-                "&:hover": {
-                  boxShadow: `0 3px 6px ${alpha(
-                    theme.palette.primary.main,
-                    0.3
-                  )}`
-                }
-              }}
-            >
-              Expand All
-            </Button>
-          </Tooltip>
-          <Tooltip title="Collapse All" arrow>
-            <Button
-              startIcon={<CollapseAllIcon />}
-              size="small"
-              variant="outlined"
-              color="secondary"
-              onClick={collapseAll}
-              sx={{
-                borderRadius: 2,
-                boxShadow: `0 2px 4px ${alpha(
-                  theme.palette.secondary.main,
-                  0.2
-                )}`,
-                "&:hover": {
-                  boxShadow: `0 3px 6px ${alpha(
-                    theme.palette.secondary.main,
-                    0.3
-                  )}`
-                }
-              }}
-            >
-              Collapse All
-            </Button>
-          </Tooltip>
+          <ActionButton
+            startIcon={<ExpandAllIcon />}
+            size="small"
+            variant="outlined"
+            color="primary"
+            onClick={expandAll}
+            sx={{
+              mr: 2,
+              borderWidth: "1.5px",
+              "&:hover": {
+                borderWidth: "1.5px"
+              }
+            }}
+          >
+            Expand All
+          </ActionButton>
+          <ActionButton
+            startIcon={<CollapseAllIcon />}
+            size="small"
+            variant="outlined"
+            color="secondary"
+            onClick={collapseAll}
+            sx={{
+              borderWidth: "1.5px",
+              "&:hover": {
+                borderWidth: "1.5px"
+              }
+            }}
+          >
+            Collapse All
+          </ActionButton>
         </Box>
       </Box>
 
       <Box
         sx={{
           backgroundColor: alpha(theme.palette.background.default, 0.4),
-          borderRadius: 2,
-          p: 2,
-          border: `1px dashed ${alpha(theme.palette.text.secondary, 0.2)}`,
-          position: "relative",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: "20px",
-            right: 0,
-            bottom: 0,
-            background: `radial-gradient(${alpha(
-              theme.palette.primary.main,
-              0.05
-            )} 1px, transparent 1px)`,
-            backgroundSize: "16px 16px",
-            zIndex: -1,
-            opacity: 0.8,
-            pointerEvents: "none"
-          }
+          borderRadius: theme.shape.borderRadius,
+          p: 3,
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          position: "relative"
         }}
       >
-        {businessLogic ? (
-          renderCondition(businessLogic)
+        {logicData ? (
+          renderCondition(logicData)
         ) : (
           <Box textAlign="center" py={4}>
             <Typography
