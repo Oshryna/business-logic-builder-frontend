@@ -1,111 +1,121 @@
 import { createTheme, alpha } from "@mui/material/styles";
 
-// Define the Inter font face
-const fontFamily = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
+// Define font families
+const headingFontFamily =
+  '"Inter", "Outfit", "Roboto", "Helvetica", "Arial", sans-serif';
+const bodyFontFamily =
+  '"Source Sans Pro", "Roboto", "Helvetica", "Arial", sans-serif';
+const monoFontFamily = '"JetBrains Mono", "Roboto Mono", monospace';
 
-// BASE44-inspired color palette
+// Modern color palette
 const primary = {
-  main: "#6366F1", // Primary indigo color
-  light: "#818CF8",
-  dark: "#4F46E5",
+  main: "#3f51b5", // Deep indigo
+  light: "#757de8",
+  dark: "#002984",
   contrastText: "#ffffff"
 };
 
 const secondary = {
-  main: "#10B981", // Green accent color
-  light: "#34D399",
-  dark: "#059669",
+  main: "#00bcd4", // Teal
+  light: "#62efff",
+  dark: "#008ba3",
   contrastText: "#ffffff"
 };
 
-// Create a custom theme inspired by BASE44
+// Create the updated theme
 const theme = createTheme({
   palette: {
     mode: "light",
     primary,
     secondary,
     info: {
-      main: "#0EA5E9", // Sky blue
-      light: "#38BDF8",
-      dark: "#0284C7",
+      main: "#2196f3", // Blue
+      light: "#64b5f6",
+      dark: "#1976d2",
       contrastText: "#ffffff"
     },
     success: {
-      main: "#10B981", // Emerald
-      light: "#34D399",
-      dark: "#059669",
+      main: "#4caf50", // Green
+      light: "#81c784",
+      dark: "#388e3c",
       contrastText: "#ffffff"
     },
     warning: {
-      main: "#F59E0B", // Amber
-      light: "#FBBF24",
-      dark: "#D97706",
+      main: "#ffc107", // Amber
+      light: "#ffecb3",
+      dark: "#ffa000",
       contrastText: "#ffffff"
     },
     error: {
-      main: "#EF4444", // Red
-      light: "#F87171",
-      dark: "#DC2626",
+      main: "#f44336", // Red
+      light: "#e57373",
+      dark: "#d32f2f",
       contrastText: "#ffffff"
     },
     background: {
-      default: "#F9FAFB", // Very light gray
+      default: "#f8f9fa",
       paper: "#ffffff"
     },
     grey: {
-      50: "#F9FAFB",
-      100: "#F3F4F6",
-      200: "#E5E7EB",
-      300: "#D1D5DB",
-      400: "#9CA3AF",
-      500: "#6B7280",
-      600: "#4B5563",
-      700: "#374151",
-      800: "#1F2937",
-      900: "#111827"
+      50: "#f8f9fa",
+      100: "#f1f3f5",
+      200: "#e9ecef",
+      300: "#dee2e6",
+      400: "#ced4da",
+      500: "#adb5bd",
+      600: "#6c757d",
+      700: "#495057",
+      800: "#343a40",
+      900: "#212529"
     },
     text: {
-      primary: "#111827",
-      secondary: "#4B5563",
-      disabled: alpha("#4B5563", 0.38)
+      primary: "#212529",
+      secondary: "#495057",
+      disabled: alpha("#495057", 0.38)
     },
-    divider: alpha("#E5E7EB", 0.9)
+    divider: alpha("#dee2e6", 0.9)
   },
   typography: {
-    fontFamily,
+    fontFamily: bodyFontFamily,
     fontWeightLight: 300,
     fontWeightRegular: 400,
     fontWeightMedium: 500,
     fontWeightBold: 700,
     h1: {
+      fontFamily: headingFontFamily,
       fontWeight: 800,
       lineHeight: 1.2,
       fontSize: "3.5rem",
       letterSpacing: "-0.02em"
     },
     h2: {
+      fontFamily: headingFontFamily,
       fontWeight: 700,
       lineHeight: 1.3,
       fontSize: "2.25rem",
       letterSpacing: "-0.01em"
     },
     h3: {
+      fontFamily: headingFontFamily,
       fontWeight: 700,
       lineHeight: 1.4,
       fontSize: "1.875rem",
       letterSpacing: "-0.01em"
     },
     h4: {
+      fontFamily: headingFontFamily,
       fontWeight: 700,
       lineHeight: 1.4,
       fontSize: "1.5rem"
     },
     h5: {
+      fontFamily: headingFontFamily,
       fontWeight: 600,
       lineHeight: 1.5,
       fontSize: "1.25rem"
     },
     h6: {
+      fontFamily: headingFontFamily,
       fontWeight: 600,
       lineHeight: 1.6,
       fontSize: "1rem"
@@ -126,10 +136,32 @@ const theme = createTheme({
     caption: {
       fontSize: "0.75rem",
       lineHeight: 1.5
+    },
+    overline: {
+      fontSize: "0.75rem",
+      fontWeight: 600,
+      textTransform: "uppercase",
+      letterSpacing: "0.06em"
+    },
+    subtitle1: {
+      fontSize: "1rem",
+      fontWeight: 500,
+      lineHeight: 1.75
+    },
+    subtitle2: {
+      fontSize: "0.875rem",
+      fontWeight: 500,
+      lineHeight: 1.75
+    },
+    // Add specialized font styles
+    monospace: {
+      fontFamily: monoFontFamily,
+      fontSize: "0.875rem",
+      letterSpacing: "-0.025em"
     }
   },
   shape: {
-    borderRadius: 2
+    borderRadius: 0
   },
   shadows: [
     "none",
@@ -191,7 +223,7 @@ const theme = createTheme({
         },
         "::-webkit-scrollbar-thumb": {
           background: "#D1D5DB",
-          borderRadius: "2px"
+          borderRadius: 0
         },
         "::-webkit-scrollbar-thumb:hover": {
           background: "#9CA3AF"
@@ -216,7 +248,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 0,
           textTransform: "none",
           fontWeight: 600,
           boxShadow: "none",
@@ -276,9 +308,8 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 16,
-          boxShadow:
-            "0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)",
+          borderRadius: 0,
+          boxShadow: "0 6px 16px -4px rgba(0, 0, 0, 0.05)",
           "&:hover": {
             boxShadow:
               "0px 10px 15px -3px rgba(0, 0, 0, 0.1), 0px 4px 6px -2px rgba(0, 0, 0, 0.05)"
@@ -318,7 +349,7 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
+          borderRadius: 0,
           fontWeight: 600
         },
         sizeSmall: {
@@ -436,7 +467,7 @@ const theme = createTheme({
     MuiToggleButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 0,
           textTransform: "none",
           fontWeight: 600,
           borderWidth: "1px",
@@ -457,7 +488,7 @@ const theme = createTheme({
         tooltip: {
           backgroundColor: alpha("#111827", 0.9),
           backdropFilter: "blur(4px)",
-          borderRadius: 6,
+          borderRadius: 0,
           padding: "8px 12px",
           fontSize: "0.75rem",
           fontWeight: 500
@@ -471,7 +502,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           "& .MuiOutlinedInput-root": {
-            borderRadius: 8,
+            borderRadius: 0,
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
               borderColor: primary.main,
               borderWidth: 2

@@ -1,5 +1,5 @@
 // src/components/RuleBuilder.js
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -23,7 +23,13 @@ import {
   Tooltip,
   useTheme,
   Tab,
-  Tabs
+  Tabs,
+  Zoom,
+  Fade,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -33,74 +39,158 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CodeIcon from "@mui/icons-material/Code";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import LightbulbIcon from "@mui/icons-material/Lightbulb";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
 import LogicTreeView from "./LogicTreeView";
 
-// Styled components
+// Styled components with modern design
 const ConditionPaper = styled(Paper)(({ theme, conditiontype }) => ({
   padding: theme.spacing(3),
   marginBottom: theme.spacing(2),
-  borderRadius: theme.shape.borderRadius,
-  borderLeft: `4px solid ${
+  borderRadius: 0,
+  border: `1px solid ${alpha(
     conditiontype === "and"
       ? theme.palette.primary.main
-      : theme.palette.secondary.main
-  }`,
-  transition: "all 0.2s ease-in-out",
+      : theme.palette.secondary.main,
+    0.3
+  )}`,
+  position: "relative",
+  transition: "all 0.3s ease-in-out",
   "&:hover": {
     boxShadow: theme.shadows[3],
-    transform: "translateY(-2px)"
+    transform: "translateY(-4px)"
+  },
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: `linear-gradient(135deg, ${alpha(
+      conditiontype === "and"
+        ? theme.palette.primary.main
+        : theme.palette.secondary.main,
+      0.05
+    )}, ${alpha(
+      conditiontype === "and"
+        ? theme.palette.primary.light
+        : theme.palette.secondary.light,
+      0.02
+    )})`,
+    borderRadius: 0,
+    zIndex: -1
   }
 }));
 
 const GroupBox = styled(Box)(({ theme, grouptype, level }) => {
   const isAnd = grouptype === "AND";
-  const primaryColor = isAnd
-    ? theme.palette.primary.main
-    : theme.palette.secondary.main;
-  const bgGradient = isAnd
-    ? `linear-gradient(135deg, ${alpha(
-        theme.palette.primary.main,
-        0.08
-      )}, ${alpha(theme.palette.primary.light, 0.04)})`
-    : `linear-gradient(135deg, ${alpha(
-        theme.palette.secondary.main,
-        0.08
-      )}, ${alpha(theme.palette.secondary.light, 0.04)})`;
+  const isNot = grouptype === "NOT";
+
+  let primaryColor;
+  let gradientColors;
+
+  if (isAnd) {
+    primaryColor = theme.palette.primary.main;
+    gradientColors = {
+      start: theme.palette.primary.main,
+      end: theme.palette.primary.light
+    };
+  } else if (isNot) {
+    primaryColor = theme.palette.error.main;
+    gradientColors = {
+      start: theme.palette.error.main,
+      end: theme.palette.error.light
+    };
+  } else {
+    primaryColor = theme.palette.secondary.main;
+    gradientColors = {
+      start: theme.palette.secondary.main,
+      end: theme.palette.secondary.light
+    };
+  }
 
   return {
     padding: theme.spacing(3),
-    marginBottom: theme.spacing(2),
-    border: `1px solid ${alpha(primaryColor, 0.2)}`,
-    borderLeft: `4px solid ${primaryColor}`,
-    borderRadius: theme.shape.borderRadius,
-    background: bgGradient,
-    transition: "all 0.2s ease-in-out",
+    marginBottom: theme.spacing(3),
+    border: `1px solid ${alpha(primaryColor, 0.3)}`,
+    borderRadius: 0,
+    position: "relative",
+    background: alpha(theme.palette.background.paper, 0.7),
+    backdropFilter: "blur(8px)",
+    transition: "all 0.3s ease-in-out",
     "&:hover": {
-      boxShadow: theme.shadows[2],
-      borderLeftWidth: "5px"
+      boxShadow: theme.shadows[3],
+      transform: "translateY(-2px)"
+    },
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: `linear-gradient(135deg, ${alpha(
+        gradientColors.start,
+        0.15
+      )}, ${alpha(gradientColors.end, 0.05)})`,
+      borderRadius: 0,
+      zIndex: -1
     }
   };
 });
 
 const StyledSelect = styled(Select)(({ theme }) => ({
   "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: alpha(theme.palette.text.primary, 0.15)
+    borderColor: alpha(theme.palette.text.primary, 0.15),
+    borderRadius: 0
   },
   "&:hover .MuiOutlinedInput-notchedOutline": {
     borderColor: alpha(theme.palette.text.primary, 0.3)
   },
   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-    borderColor: theme.palette.primary.main
+    borderColor: theme.palette.primary.main,
+    borderWidth: 2
+  },
+  "& .MuiSelect-select": {
+    paddingTop: 10,
+    paddingBottom: 10
+  }
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 0,
+    transition: "all 0.2s ease",
+    "& fieldset": {
+      borderColor: alpha(theme.palette.text.primary, 0.15)
+    },
+    "&:hover fieldset": {
+      borderColor: alpha(theme.palette.text.primary, 0.3)
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: theme.palette.primary.main,
+      borderWidth: 2
+    }
+  },
+  "& .MuiInputBase-input": {
+    paddingTop: 10,
+    paddingBottom: 10
   }
 }));
 
 const ActionButton = styled(Button)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: 0,
   fontWeight: 600,
   textTransform: "none",
-  boxShadow: "none"
+  padding: theme.spacing(1, 2),
+  transition: "all 0.2s ease-in-out",
+  "&:hover": {
+    transform: "translateY(-2px)"
+  }
 }));
 
 const OperatorChip = styled(Chip)(({ theme, operatortype }) => {
@@ -134,6 +224,7 @@ const OperatorChip = styled(Chip)(({ theme, operatortype }) => {
     backgroundColor: alpha(getColor(), 0.1),
     color: getColor(),
     border: `1px solid ${alpha(getColor(), 0.2)}`,
+    borderRadius: 0,
     "& .MuiChip-label": {
       padding: "0 8px"
     }
@@ -167,7 +258,73 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
   };
 
   return (
-    <ConditionPaper elevation={1} conditiontype="condition">
+    <ConditionPaper elevation={2} conditiontype="condition">
+      <Box
+        sx={{
+          position: "absolute",
+          top: -10,
+          left: 16,
+          bgcolor: alpha(theme.palette.background.paper, 0.9),
+          px: 1,
+          borderRadius: 0
+        }}
+      >
+        <Typography variant="caption" fontWeight={600} color="text.secondary">
+          Condition {index + 1}
+        </Typography>
+      </Box>
+
+      {/* Visual representation of the condition as a sentence */}
+      <Box
+        sx={{
+          p: 2,
+          mb: 3,
+          borderRadius: 0,
+          bgcolor: alpha(theme.palette.background.default, 0.5),
+          border: `1px dashed ${alpha(theme.palette.divider, 0.6)}`,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 1
+        }}
+      >
+        <Typography fontWeight={600}>IF</Typography>
+
+        <Chip
+          label={condition.field || "$.Transfer"}
+          size="small"
+          color="primary"
+          sx={{
+            fontWeight: 500,
+            borderRadius: 0
+          }}
+        />
+
+        <Chip
+          label={getOperatorLabel(condition.operator || "eq")}
+          size="small"
+          variant="outlined"
+          sx={{
+            fontWeight: 500,
+            borderRadius: 0,
+            borderColor: alpha(theme.palette.info.main, 0.3),
+            color: theme.palette.info.main,
+            bgcolor: alpha(theme.palette.info.main, 0.05)
+          }}
+        />
+
+        <Chip
+          label={condition.value_prop?.value || "(Value)"}
+          size="small"
+          sx={{
+            fontWeight: 500,
+            borderRadius: 0,
+            bgcolor: alpha(theme.palette.secondary.main, 0.1),
+            color: theme.palette.secondary.main
+          }}
+        />
+      </Box>
+
       <Grid container spacing={3} alignItems="center">
         <Grid item xs={12} sm={3}>
           <FormControl fullWidth size="small">
@@ -243,7 +400,7 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
 
             {condition.comparison_prop?.type &&
               condition.comparison_prop.type !== "simple" && (
-                <TextField
+                <StyledTextField
                   fullWidth
                   label="ComparisonName"
                   value={condition.comparison_prop?.name || ""}
@@ -256,12 +413,6 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
                   }}
                   size="small"
                   placeholder="Enter comparison name"
-                  InputProps={{
-                    sx: {
-                      borderRadius: theme.shape.borderRadius,
-                      fontSize: "0.9rem"
-                    }
-                  }}
                 />
               )}
 
@@ -284,7 +435,8 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
                 <MenuItem value="json-path">JSON Path</MenuItem>
               </StyledSelect>
             </FormControl>
-            <TextField
+
+            <StyledTextField
               fullWidth
               label="Value"
               value={condition.value_prop?.value || ""}
@@ -301,14 +453,9 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
                   ? "$.fieldPath"
                   : "value"
               }
-              InputProps={{
-                sx: {
-                  borderRadius: theme.shape.borderRadius,
-                  fontSize: "0.9rem"
-                }
-              }}
             />
-            <TextField
+
+            <StyledTextField
               fullWidth
               label="Offset"
               type="number"
@@ -324,12 +471,6 @@ const Condition = ({ condition, onChange, onDelete, index }) => {
               }}
               size="small"
               placeholder="Enter offset value (optional)"
-              InputProps={{
-                sx: {
-                  borderRadius: theme.shape.borderRadius,
-                  fontSize: "0.9rem"
-                }
-              }}
             />
           </Stack>
         </Grid>
@@ -414,33 +555,62 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
     }
   };
 
+  // Get the appropriate color for the group type
+  const getGroupColor = () => {
+    switch (group.type) {
+      case "AND":
+        return theme.palette.primary.main;
+      case "OR":
+        return theme.palette.secondary.main;
+      case "NOT":
+        return theme.palette.error.main;
+      default:
+        return theme.palette.grey[600];
+    }
+  };
+
   return (
     <GroupBox grouptype={group.type} level={level}>
-      <Box display="flex" alignItems="center" mb={3}>
-        <Chip
-          label={group.type}
-          color={
-            group.type === "AND"
-              ? "primary"
-              : group.type === "NOT"
-              ? "error"
-              : "secondary"
-          }
-          sx={{
-            mr: 2,
-            fontWeight: 600,
-            fontSize: "0.85rem",
-            height: 28
-          }}
-        />
-
+      <Box
+        sx={{
+          position: "absolute",
+          top: -12,
+          left: 20,
+          bgcolor: "background.paper",
+          px: 1.5,
+          py: 0.5,
+          borderRadius: 0,
+          boxShadow: `0 2px 4px ${alpha("#000", 0.05)}`,
+          border: `1px solid ${alpha(getGroupColor(), 0.3)}`,
+          zIndex: 1
+        }}
+      >
         <Typography
-          variant="subtitle1"
-          sx={{ mr: 3, fontWeight: 600, color: theme.palette.text.primary }}
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
+            color: getGroupColor(),
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5
+          }}
         >
-          {level === 0 ? "Root Group" : "Nested Group"}
+          <Box
+            component="span"
+            sx={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              bgcolor: getGroupColor(),
+              display: "inline-block",
+              mr: 0.5
+            }}
+          />
+          {group.type} Group
         </Typography>
+      </Box>
 
+      <Box display="flex" alignItems="center" mb={3} mt={1}>
         <FormControl size="small" sx={{ minWidth: 120, mr: 2 }}>
           <InputLabel>Group Type</InputLabel>
           <StyledSelect
@@ -468,7 +638,7 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
                 }
               }}
             >
-              <DeleteIcon />
+              <DeleteIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         )}
@@ -483,7 +653,7 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
           sx={{
             mb: 3,
             alignItems: "center",
-            borderRadius: theme.shape.borderRadius,
+            borderRadius: 0,
             backgroundColor: alpha(theme.palette.info.main, 0.1),
             color: theme.palette.info.dark,
             "& .MuiAlert-icon": {
@@ -499,11 +669,11 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
       {group.conditions.length === 0 ? (
         <Alert
           severity="info"
-          icon={<ErrorOutlineIcon />}
+          icon={<LightbulbIcon />}
           sx={{
             mb: 3,
             alignItems: "center",
-            borderRadius: theme.shape.borderRadius,
+            borderRadius: 0,
             backgroundColor: alpha(theme.palette.info.main, 0.1),
             color: theme.palette.info.dark,
             "& .MuiAlert-icon": {
@@ -515,27 +685,71 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
           below.
         </Alert>
       ) : (
-        group.conditions.map((condition, index) => (
-          <Box key={index}>
-            {condition.type ? (
-              <ConditionGroup
-                group={condition}
-                onChange={(updatedGroup) =>
-                  updateCondition(index, updatedGroup)
-                }
-                onDelete={() => deleteCondition(index)}
-                level={level + 1}
-              />
-            ) : (
-              <Condition
-                condition={condition}
-                onChange={updateCondition}
-                onDelete={deleteCondition}
-                index={index}
-              />
-            )}
-          </Box>
-        ))
+        <Box
+          sx={{
+            position: "relative",
+            pl: group.conditions.length > 1 ? 4 : 0,
+            "&::before":
+              group.conditions.length > 1
+                ? {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: 12,
+                    width: 2,
+                    backgroundColor: alpha(getGroupColor(), 0.3),
+                    borderRadius: 0
+                  }
+                : {}
+          }}
+        >
+          {group.conditions.map((condition, index) => (
+            <Box key={index} sx={{ position: "relative" }}>
+              {index > 0 && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: "-12px",
+                    left: -30,
+                    width: 24,
+                    height: 24,
+                    bgcolor: alpha(getGroupColor(), 0.1),
+                    color: getGroupColor(),
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.75rem",
+                    fontWeight: "bold",
+                    border: `1px solid ${alpha(getGroupColor(), 0.3)}`,
+                    zIndex: 2
+                  }}
+                >
+                  {group.type}
+                </Box>
+              )}
+
+              {condition.type ? (
+                <ConditionGroup
+                  group={condition}
+                  onChange={(updatedGroup) =>
+                    updateCondition(index, updatedGroup)
+                  }
+                  onDelete={() => deleteCondition(index)}
+                  level={level + 1}
+                />
+              ) : (
+                <Condition
+                  condition={condition}
+                  onChange={updateCondition}
+                  onDelete={deleteCondition}
+                  index={index}
+                />
+              )}
+            </Box>
+          ))}
+        </Box>
       )}
 
       <Box mt={3} display="flex" gap={2} flexWrap="wrap">
@@ -547,7 +761,8 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
           color="primary"
           sx={{
             borderWidth: "1.5px",
-            px: 2
+            px: 2,
+            py: 1
           }}
         >
           Add Condition
@@ -560,7 +775,8 @@ const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
           color="secondary"
           sx={{
             borderWidth: "1.5px",
-            px: 2
+            px: 2,
+            py: 1
           }}
         >
           Add Nested Group
@@ -583,12 +799,14 @@ const RuleBuilder = ({ onSave }) => {
   const [error, setError] = useState("");
   const [previewTab, setPreviewTab] = useState(0);
   const [showLivePreview, setShowLivePreview] = useState(true);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   const generateJson = () => {
     try {
       const output = JSON.stringify({ business_logic: businessLogic }, null, 2);
       setJsonOutput(output);
       setError("");
+      setPreviewDialogOpen(true);
     } catch (err) {
       setError("Failed to generate JSON: " + err.message);
     }
@@ -596,6 +814,10 @@ const RuleBuilder = ({ onSave }) => {
 
   const handlePreviewTabChange = (event, newValue) => {
     setPreviewTab(newValue);
+  };
+
+  const handleClosePreviewDialog = () => {
+    setPreviewDialogOpen(false);
   };
 
   const handleSave = () => {
@@ -642,11 +864,16 @@ const RuleBuilder = ({ onSave }) => {
       <Grid container spacing={3}>
         <Grid item xs={12} md={showLivePreview ? 8 : 12}>
           <Card
-            elevation={0}
+            elevation={3}
             sx={{
               mb: 4,
               overflow: "visible",
-              borderRadius: 3
+              borderRadius: 0,
+              border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
+              boxShadow: `0 6px 16px -4px ${alpha(
+                theme.palette.primary.main,
+                0.1
+              )}`
             }}
           >
             <CardHeader
@@ -701,7 +928,7 @@ const RuleBuilder = ({ onSave }) => {
               }}
             />
             <CardContent sx={{ pt: 3 }}>
-              <TextField
+              <StyledTextField
                 fullWidth
                 label="Rule Name"
                 value={ruleName}
@@ -711,7 +938,7 @@ const RuleBuilder = ({ onSave }) => {
                 required
                 InputProps={{
                   sx: {
-                    borderRadius: theme.shape.borderRadius,
+                    borderRadius: 0,
                     fontSize: "1rem",
                     "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: theme.palette.primary.main,
@@ -732,7 +959,7 @@ const RuleBuilder = ({ onSave }) => {
                   severity="error"
                   sx={{
                     mt: 3,
-                    borderRadius: theme.shape.borderRadius,
+                    borderRadius: 0,
                     backgroundColor: alpha(theme.palette.error.main, 0.1),
                     color: theme.palette.error.dark,
                     "& .MuiAlert-icon": {
@@ -776,99 +1003,103 @@ const RuleBuilder = ({ onSave }) => {
             </CardActions>
           </Card>
 
-          {jsonOutput && (
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 3,
+          <Dialog
+            open={previewDialogOpen}
+            onClose={handleClosePreviewDialog}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 0,
                 overflow: "hidden"
-              }}
-            >
-              <CardHeader
-                title={
-                  <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                    <Tabs
-                      value={previewTab}
-                      onChange={handlePreviewTabChange}
-                      textColor="primary"
-                      indicatorColor="primary"
-                    >
-                      <Tab
-                        icon={<CodeIcon />}
-                        iconPosition="start"
-                        label="JSON"
-                        sx={{
-                          fontWeight: 600,
-                          textTransform: "none"
-                        }}
-                      />
-                      <Tab
-                        icon={<AccountTreeIcon />}
-                        iconPosition="start"
-                        label="Tree View"
-                        sx={{
-                          fontWeight: 600,
-                          textTransform: "none"
-                        }}
-                      />
-                    </Tabs>
-                  </Box>
-                }
-                sx={{
-                  p: 2,
-                  "& .MuiCardHeader-content": {
-                    width: "100%"
-                  }
-                }}
-              />
-              <CardContent sx={{ p: 0 }}>
-                <Box sx={{ display: previewTab === 0 ? "block" : "none" }}>
-                  <Paper
+              }
+            }}
+          >
+            <DialogTitle sx={{ p: 0 }}>
+              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+                <Tabs
+                  value={previewTab}
+                  onChange={handlePreviewTabChange}
+                  textColor="primary"
+                  indicatorColor="primary"
+                >
+                  <Tab
+                    icon={<CodeIcon />}
+                    iconPosition="start"
+                    label="JSON"
                     sx={{
-                      p: 3,
-                      maxHeight: 400,
-                      overflow: "auto",
-                      backgroundColor: alpha(theme.palette.primary.main, 0.03),
-                      borderRadius: 0,
-                      fontFamily: '"Roboto Mono", monospace',
-                      "& pre": {
-                        margin: 0,
-                        fontFamily: "inherit",
-                        fontSize: "0.875rem",
-                        color: theme.palette.text.primary
-                      }
+                      fontWeight: 600,
+                      textTransform: "none"
                     }}
-                  >
-                    <pre>{jsonOutput}</pre>
-                  </Paper>
-                </Box>
-                <Box
+                  />
+                  <Tab
+                    icon={<AccountTreeIcon />}
+                    iconPosition="start"
+                    label="Tree View"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: "none"
+                    }}
+                  />
+                </Tabs>
+              </Box>
+            </DialogTitle>
+            <DialogContent sx={{ p: 0 }}>
+              <Box sx={{ display: previewTab === 0 ? "block" : "none" }}>
+                <Paper
                   sx={{
-                    display: previewTab === 1 ? "block" : "none",
-                    p: 2,
-                    height: 400,
+                    p: 3,
+                    maxHeight: 500,
                     overflow: "auto",
-                    backgroundColor: alpha(theme.palette.background.paper, 0.5)
+                    backgroundColor: alpha(theme.palette.primary.main, 0.03),
+                    borderRadius: 0,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    "& pre": {
+                      margin: 0,
+                      fontFamily: "inherit",
+                      fontSize: "0.875rem",
+                      color: theme.palette.text.primary
+                    }
                   }}
                 >
-                  <LogicTreeView businessLogic={businessLogic} />
-                </Box>
-              </CardContent>
-            </Card>
-          )}
+                  <pre>{jsonOutput}</pre>
+                </Paper>
+              </Box>
+              <Box
+                sx={{
+                  display: previewTab === 1 ? "block" : "none",
+                  p: 2,
+                  height: 500,
+                  overflow: "auto",
+                  backgroundColor: alpha(theme.palette.background.paper, 0.5)
+                }}
+              >
+                <LogicTreeView businessLogic={businessLogic} />
+              </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 2 }}>
+              <ActionButton
+                variant="outlined"
+                onClick={handleClosePreviewDialog}
+              >
+                Close
+              </ActionButton>
+            </DialogActions>
+          </Dialog>
         </Grid>
 
         {showLivePreview && (
           <Grid item xs={12} md={4}>
             <Card
-              elevation={0}
+              elevation={2}
               sx={{
                 position: { md: "sticky" },
                 top: { md: 24 },
                 height: "fit-content",
-                borderRadius: 3,
+                borderRadius: 0,
                 overflow: "hidden",
-                mb: 4
+                mb: 4,
+                border: `1px solid ${alpha(theme.palette.divider, 0.7)}`
               }}
             >
               <CardHeader

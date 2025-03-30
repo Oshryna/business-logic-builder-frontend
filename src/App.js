@@ -24,7 +24,13 @@ import {
   alpha,
   Stack,
   Menu,
-  MenuItem
+  MenuItem,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemButton
 } from "@mui/material";
 import {
   Code as CodeIcon,
@@ -36,11 +42,16 @@ import {
   PlayArrow as PlayArrowIcon,
   Menu as MenuIcon,
   Logout as LogoutIcon,
-  AccountCircle as AccountCircleIcon
+  AccountCircle as AccountCircleIcon,
+  Home as HomeIcon,
+  Close as CloseIcon,
+  Help as HelpIcon,
+  Article as ArticleIcon
 } from "@mui/icons-material";
 import RuleBuilder from "./components/RuleBuilder";
 import RuleList from "./components/RuleList";
 import RuleTester from "./components/RuleTester";
+import HomePage from "./components/HomePage";
 import AuthPage from "./components/AuthPage";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import theme from "./theme";
@@ -58,7 +69,14 @@ function TabPanel(props) {
       style={{ height: "100%" }}
     >
       {value === index && (
-        <Box sx={{ p: { xs: 2, md: 3 }, height: "100%" }}>{children}</Box>
+        <Box
+          sx={{
+            p: { xs: value === 0 ? 0 : 2, md: value === 0 ? 0 : 3 },
+            height: "100%"
+          }}
+        >
+          {children}
+        </Box>
       )}
     </div>
   );
@@ -73,6 +91,7 @@ function AppContent() {
     severity: "success"
   });
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isMediumScreen = useMediaQuery(theme.breakpoints.down("md"));
   const { currentUser, logout } = useAuth();
@@ -100,6 +119,10 @@ function AppContent() {
     setTabValue(newValue);
   };
 
+  const handleStartBuilding = () => {
+    setTabValue(1); // Switch to the Rule Builder tab
+  };
+
   const handleRuleSave = async (rule) => {
     try {
       // In a real app, you would send this to your backend
@@ -119,7 +142,7 @@ function AppContent() {
       });
 
       // Switch to the Rules List tab
-      setTabValue(1);
+      setTabValue(2);
     } catch (error) {
       console.error("Error saving rule:", error);
       setNotification({
@@ -156,6 +179,137 @@ function AppContent() {
     logout();
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
+  const mobileMenu = (
+    <Drawer
+      anchor="right"
+      open={mobileMenuOpen}
+      onClose={closeMobileMenu}
+      PaperProps={{
+        sx: {
+          width: 280,
+          borderRadius: "0 0 0 16px",
+          boxShadow: theme.shadows[8]
+        }
+      }}
+    >
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`
+        }}
+      >
+        <Typography variant="h6" fontWeight={600}>
+          Menu
+        </Typography>
+        <IconButton onClick={closeMobileMenu}>
+          <CloseIcon />
+        </IconButton>
+      </Box>
+
+      <List sx={{ py: 2 }}>
+        <ListItem
+          disablePadding
+          onClick={() => {
+            setTabValue(0);
+            closeMobileMenu();
+          }}
+        >
+          <ListItemButton selected={tabValue === 0}>
+            <ListItemIcon>
+              <HomeIcon color={tabValue === 0 ? "primary" : "inherit"} />
+            </ListItemIcon>
+            <ListItemText primary="Home" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem
+          disablePadding
+          onClick={() => {
+            setTabValue(1);
+            closeMobileMenu();
+          }}
+        >
+          <ListItemButton selected={tabValue === 1}>
+            <ListItemIcon>
+              <DashboardIcon color={tabValue === 1 ? "primary" : "inherit"} />
+            </ListItemIcon>
+            <ListItemText primary="Rule Builder" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem
+          disablePadding
+          onClick={() => {
+            setTabValue(2);
+            closeMobileMenu();
+          }}
+        >
+          <ListItemButton selected={tabValue === 2}>
+            <ListItemIcon>
+              <ViewListIcon color={tabValue === 2 ? "primary" : "inherit"} />
+            </ListItemIcon>
+            <ListItemText primary="Rule List" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem
+          disablePadding
+          onClick={() => {
+            setTabValue(3);
+            closeMobileMenu();
+          }}
+        >
+          <ListItemButton selected={tabValue === 3}>
+            <ListItemIcon>
+              <PlayArrowIcon color={tabValue === 3 ? "primary" : "inherit"} />
+            </ListItemIcon>
+            <ListItemText primary="Rule Tester" />
+          </ListItemButton>
+        </ListItem>
+
+        <Divider sx={{ my: 2 }} />
+
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <HelpIcon />
+            </ListItemIcon>
+            <ListItemText primary="Help & Documentation" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton>
+            <ListItemIcon>
+              <ArticleIcon />
+            </ListItemIcon>
+            <ListItemText primary="Tutorials" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding onClick={handleLogout}>
+          <ListItemButton>
+            <ListItemIcon>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText primary="Logout" />
+          </ListItemButton>
+        </ListItem>
+      </List>
+    </Drawer>
+  );
+
   return (
     <Box
       sx={{
@@ -167,12 +321,20 @@ function AppContent() {
       }}
     >
       {/* Header */}
-      <AppBar position="sticky" elevation={0}>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          bgcolor: "background.paper",
+          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+          color: "text.primary"
+        }}
+      >
         <Toolbar sx={{ px: { xs: 2, sm: 4 } }}>
           <Stack direction="row" alignItems="center" spacing={2}>
             <Avatar
               sx={{
-                background: "linear-gradient(135deg, #6366F1 0%, #818CF8 100%)",
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 color: "white",
                 fontWeight: "bold",
                 width: 36,
@@ -187,7 +349,7 @@ function AppContent() {
               sx={{
                 fontWeight: 700,
                 display: { xs: "none", sm: "block" },
-                background: "linear-gradient(to right, #111827, #4B5563)",
+                background: `linear-gradient(to right, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent"
               }}
@@ -200,11 +362,81 @@ function AppContent() {
 
           <Stack direction="row" spacing={1}>
             {isMediumScreen ? (
-              <IconButton color="inherit" edge="end">
+              <IconButton color="inherit" edge="end" onClick={toggleMobileMenu}>
                 <MenuIcon />
               </IconButton>
             ) : (
               <>
+                <Button
+                  color="inherit"
+                  sx={{
+                    fontWeight: 600,
+                    color:
+                      tabValue === 0
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
+                  onClick={() => setTabValue(0)}
+                >
+                  Home
+                </Button>
+
+                <Button
+                  color="inherit"
+                  sx={{
+                    fontWeight: 600,
+                    color:
+                      tabValue === 1
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
+                  onClick={() => setTabValue(1)}
+                >
+                  Build Rules
+                </Button>
+
+                <Button
+                  color="inherit"
+                  sx={{
+                    fontWeight: 600,
+                    color:
+                      tabValue === 2
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
+                  onClick={() => setTabValue(2)}
+                >
+                  My Rules
+                </Button>
+
+                <Button
+                  color="inherit"
+                  sx={{
+                    fontWeight: 600,
+                    color:
+                      tabValue === 3
+                        ? theme.palette.primary.main
+                        : "text.secondary",
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                    }
+                  }}
+                  onClick={() => setTabValue(3)}
+                >
+                  Test Rules
+                </Button>
+
+                <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+
                 <Button
                   color="inherit"
                   sx={{
@@ -252,7 +484,7 @@ function AppContent() {
                     sx: {
                       width: 220,
                       maxWidth: "100%",
-                      borderRadius: 1,
+                      borderRadius: theme.shape.borderRadius,
                       mt: 1.5,
                       boxShadow: `0 10px 30px -15px ${alpha("#000", 0.15)}`
                     }
@@ -287,91 +519,61 @@ function AppContent() {
             )}
           </Stack>
         </Toolbar>
-
-        <Box sx={{ px: { xs: 0, sm: 2 } }}>
-          <Tabs
-            value={tabValue}
-            onChange={handleTabChange}
-            aria-label="business logic tabs"
-            variant={isMobile ? "fullWidth" : "standard"}
-            centered={!isMobile}
-            sx={{
-              px: 2,
-              "& .MuiTab-root": {
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: "0.95rem",
-                color: alpha(theme.palette.text.primary, 0.7),
-                minHeight: 48,
-                "&.Mui-selected": {
-                  color: theme.palette.primary.main
-                }
-              }
-            }}
-          >
-            <Tab
-              label="Rule Builder"
-              icon={<DashboardIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Rule List"
-              icon={<ViewListIcon />}
-              iconPosition="start"
-            />
-            <Tab
-              label="Rule Tester"
-              icon={<PlayArrowIcon />}
-              iconPosition="start"
-            />
-          </Tabs>
-        </Box>
       </AppBar>
+
+      {/* Mobile menu drawer */}
+      {mobileMenu}
 
       {/* Main content */}
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <TabPanel value={tabValue} index={0}>
-          <RuleBuilder onSave={handleRuleSave} />
+          <HomePage onStartBuilding={handleStartBuilding} />
         </TabPanel>
         <TabPanel value={tabValue} index={1}>
-          <RuleList rules={rules} onDelete={handleRuleDelete} />
+          <RuleBuilder onSave={handleRuleSave} />
         </TabPanel>
         <TabPanel value={tabValue} index={2}>
+          <RuleList rules={rules} onDelete={handleRuleDelete} />
+        </TabPanel>
+        <TabPanel value={tabValue} index={3}>
           <RuleTester rules={rules} />
         </TabPanel>
       </Box>
 
-      {/* Footer */}
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          px: 2,
-          mt: "auto",
-          textAlign: "center"
-        }}
-      >
-        <Divider sx={{ mb: 3 }} />
-        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-          <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
-            Documentation
-          </Link>
-          <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
-            Privacy
-          </Link>
-          <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
-            Terms
-          </Link>
-        </Box>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ mt: 1 }}
+      {/* Footer - Only show on home page */}
+      {tabValue === 0 && (
+        <Box
+          component="footer"
+          sx={{
+            py: 3,
+            px: 2,
+            mt: "auto",
+            textAlign: "center",
+            bgcolor: "background.paper",
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.6)}`
+          }}
         >
-          © {new Date().getFullYear()} Logic Builder. All rights reserved.
-        </Typography>
-      </Box>
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
+              Documentation
+            </Link>
+            <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
+              Privacy
+            </Link>
+            <Link href="#" underline="hover" color="inherit" sx={{ mx: 2 }}>
+              Terms
+            </Link>
+          </Box>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 1 }}
+          >
+            © {new Date().getFullYear()} Logic Builder. All rights reserved.
+          </Typography>
+        </Box>
+      )}
 
       {/* Notifications */}
       <Snackbar
@@ -385,7 +587,7 @@ function AppContent() {
           severity={notification.severity}
           sx={{
             width: "100%",
-            borderRadius: 1,
+            borderRadius: theme.shape.borderRadius,
             boxShadow: theme.shadows[3]
           }}
         >
