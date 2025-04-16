@@ -68,3 +68,65 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+# Business Logic Builder
+
+## Project Summary & Architecture
+
+This project is a modular, scalable React application for building and visualizing business logic rules. It follows best practices for maintainability, testability, and UI/UX using Material UI and a component-driven architecture.
+
+### Key Features
+
+- **Modular Components:** Large components (e.g., RuleBuilder, LogicTreeView, RuleList) are split into smaller, reusable components (Condition, ConditionGroup, etc.).
+- **Best Practices:** Code follows React and Material UI conventions, with clear separation of concerns, hooks for state, and styled components for UI consistency.
+- **Testing:** Comprehensive unit and integration tests are provided for all major components using React Testing Library and Jest.
+- **Performance & Maintainability:** Components are optimized for performance and easy to extend or refactor.
+
+### Main Components
+
+- `RuleBuilder`: Orchestrates the rule creation UI, validation, and state.
+- `ConditionGroup`: Handles groups of conditions (AND/OR/NOT) and nesting.
+- `Condition`: Handles a single condition row.
+- `LogicTreeView`: Visualizes the business logic tree structure.
+- `RuleList`: Displays, filters, and manages saved rules.
+
+### Directory Structure
+
+```
+/src
+  /components
+    Condition.js
+    ConditionGroup.js
+    RuleBuilder.js
+    LogicTreeView.js
+    RuleList.js
+    ...
+  /tests
+    (unit/integration tests for all major components)
+```
+
+### Best Practices Followed
+
+- Modular, reusable components
+- Consistent naming and code style
+- Robust error handling and input validation
+- Responsive, accessible UI with Material UI
+- Clear documentation and code comments
+- Comprehensive test coverage
+
+### Running Tests
+
+To run all unit and integration tests:
+
+```
+npm test
+```
+
+Tests are located alongside their respective components or in a `/tests` directory. They cover rendering, user interaction, validation, and callback logic for all major UI elements.
+
+### Further Development
+
+- Follow the same modular and test-driven approach for any new features.
+- See code comments and this README for guidance on extending or maintaining the codebase.
+
+---

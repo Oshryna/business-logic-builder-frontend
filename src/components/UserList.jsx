@@ -9,37 +9,70 @@ function UserList() {
 
   useEffect(() => {
     async function fetchUsers() {
+      logger.info("UserList component - Fetching users");
+
       try {
-        logger.info("Fetching users from API");
-        const response = await axios.get("http://localhost:3001/api/users");
-        setUsers(response.data);
-        logger.info("Users fetched successfully", {
+        const response = await axios.get("http://localhost:3001/api/users", {
+          headers: {
+            "x-correlation-id": logger.correlationId
+          }
+        });
+
+        logger.debug("UserList component - Users received", {
           count: response.data.length
         });
+
+        setUsers(response.data);
+        setLoading(false);
       } catch (err) {
-        logger.error("Failed to fetch users", err);
+        logger.error("UserList component - Failed to fetch users", err);
         setError("Failed to load users. Please try again later.");
-      } finally {
         setLoading(false);
       }
     }
 
     fetchUsers();
+
+    // Log component unmount
+    return () => {
+      logger.debug("UserList component - Unmounting");
+    };
   }, []);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
+  const handleRetry = () => {
+    logger.info("UserList component - User clicked retry button");
+    setLoading(true);
+    setError(null);
+    fetchUsers();
+  };
+
+  if (loading) {
+    return <div>Loading users...</div>;
+  }
+
+  if (error) {
+    return (
+      <div>
+        <p>{error}</p>
+        <button onClick={handleRetry}>Retry</button>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2>User List</h2>
-      <ul>
-        {users.map((user) => (
-          <li key={user.id}>
-            {user.name} ({user.email})
-          </li>
-        ))}
-      </ul>
+      {users.length === 0 ? (
+        <p>No users found</p>
+      ) : (
+        <ul>
+          {users.map((user) => (
+            <li key={user.id}>
+              {user.name} ({user.email})
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -4,8 +4,9 @@ import { v4 as uuidv4 } from "uuid";
 // Logger class for frontend
 class FrontendLogger {
   constructor(options = {}) {
-    this.apiEndpoint = options.apiEndpoint || "/api/logs/frontend";
-    this.applicationName = options.applicationName || "frontend";
+    this.apiEndpoint =
+      options.apiEndpoint || "http://localhost:3001/api/logs/frontend";
+    this.applicationName = options.applicationName || "business-logic-builder";
     this.environment = options.environment || "development";
     this.enabled = options.enabled !== false;
     this.consoleEnabled = options.consoleEnabled !== false;
@@ -138,10 +139,6 @@ class FrontendLogger {
 }
 
 // Create and export a singleton instance
-const logger = new FrontendLogger({
-  apiEndpoint: "http://localhost:3001/api/logs/frontend",
-  applicationName: "business-logic-builder",
-  environment: import.meta.env.MODE
-});
+const logger = new FrontendLogger();
 
 export default logger;

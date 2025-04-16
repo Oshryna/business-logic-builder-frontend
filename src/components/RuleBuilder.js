@@ -29,7 +29,9 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Collapse,
+  InputAdornment
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -42,88 +44,113 @@ import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import LightbulbIcon from "@mui/icons-material/Lightbulb";
+import EditIcon from "@mui/icons-material/Edit";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DragHandleIcon from "@mui/icons-material/DragHandle";
 import Grid from "@mui/material/Grid";
 import { styled } from "@mui/material/styles";
 import LogicTreeView from "./LogicTreeView";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import InfoIcon from "@mui/icons-material/Info";
+import CloseIcon from "@mui/icons-material/Close";
+import Condition from "./Condition";
+import ConditionGroup from "./ConditionGroup";
+
+// New consistent color system
+const getColorForDepth = (theme, level, groupType) => {
+  // Base colors for different types
+  let baseColor;
+
+  switch (groupType) {
+    case "AND":
+      baseColor = theme.palette.primary;
+      break;
+    case "OR":
+      baseColor = theme.palette.secondary;
+      break;
+    case "NOT":
+      baseColor = theme.palette.error;
+      break;
+    default:
+      baseColor = theme.palette.primary;
+  }
+
+  // Adjust intensity based on nesting level
+  const intensity = Math.min(0.3 + level * 0.15, 0.9);
+
+  return {
+    main: baseColor.main,
+    light: baseColor.light,
+    dark: baseColor.dark,
+    intensity: intensity
+  };
+};
 
 // Styled components with modern design
-const ConditionPaper = styled(Paper)(({ theme, conditiontype }) => ({
-  padding: theme.spacing(3),
-  marginBottom: theme.spacing(2),
-  borderRadius: 0,
-  border: `1px solid ${alpha(
-    conditiontype === "and"
-      ? theme.palette.primary.main
-      : theme.palette.secondary.main,
-    0.3
-  )}`,
-  position: "relative",
-  transition: "all 0.3s ease-in-out",
-  "&:hover": {
-    boxShadow: theme.shadows[3],
-    transform: "translateY(-4px)"
-  },
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "100%",
-    height: "100%",
-    background: `linear-gradient(135deg, ${alpha(
+const ConditionPaper = styled(Paper)(({ theme, conditiontype, level = 0 }) => {
+  const isCompact = level > 1; // Use more compact style for deeper levels
+
+  return {
+    padding: theme.spacing(isCompact ? 2 : 3),
+    marginBottom: theme.spacing(2),
+    borderRadius: 8,
+    border: `1px solid ${alpha(
       conditiontype === "and"
         ? theme.palette.primary.main
         : theme.palette.secondary.main,
-      0.05
-    )}, ${alpha(
-      conditiontype === "and"
-        ? theme.palette.primary.light
-        : theme.palette.secondary.light,
-      0.02
-    )})`,
-    borderRadius: 0,
-    zIndex: -1
-  }
-}));
+      0.3
+    )}`,
+    position: "relative",
+    transition: "all 0.3s ease-in-out",
+    transform: "scale(0.98)",
+    boxShadow: `0 2px 8px ${alpha(theme.palette.common.black, 0.05)}`,
+    "&:hover": {
+      boxShadow: theme.shadows[3],
+      transform: "scale(1.0) translateY(-2px)"
+    },
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: `linear-gradient(135deg, ${alpha(
+        conditiontype === "and"
+          ? theme.palette.primary.main
+          : theme.palette.secondary.main,
+        0.05
+      )}, ${alpha(
+        conditiontype === "and"
+          ? theme.palette.primary.light
+          : theme.palette.secondary.light,
+        0.02
+      )})`,
+      borderRadius: 8,
+      zIndex: -1
+    }
+  };
+});
 
-const GroupBox = styled(Box)(({ theme, grouptype, level }) => {
-  const isAnd = grouptype === "AND";
-  const isNot = grouptype === "NOT";
-
-  let primaryColor;
-  let gradientColors;
-
-  if (isAnd) {
-    primaryColor = theme.palette.primary.main;
-    gradientColors = {
-      start: theme.palette.primary.main,
-      end: theme.palette.primary.light
-    };
-  } else if (isNot) {
-    primaryColor = theme.palette.error.main;
-    gradientColors = {
-      start: theme.palette.error.main,
-      end: theme.palette.error.light
-    };
-  } else {
-    primaryColor = theme.palette.secondary.main;
-    gradientColors = {
-      start: theme.palette.secondary.main,
-      end: theme.palette.secondary.light
-    };
-  }
+const GroupBox = styled(Box)(({ theme, grouptype, level = 0 }) => {
+  // Use the consistent color system
+  const colorSet = getColorForDepth(theme, level, grouptype);
+  const primaryColor = colorSet.main;
+  const intensity = colorSet.intensity;
 
   return {
-    padding: theme.spacing(3),
-    marginBottom: theme.spacing(3),
-    border: `1px solid ${alpha(primaryColor, 0.3)}`,
-    borderRadius: 0,
+    padding: theme.spacing(level > 1 ? 2 : 3),
+    marginBottom: theme.spacing(2),
+    border: `1px solid ${alpha(primaryColor, 0.3 + level * 0.1)}`,
+    borderRadius: 8,
     position: "relative",
     background: alpha(theme.palette.background.paper, 0.7),
     backdropFilter: "blur(8px)",
     transition: "all 0.3s ease-in-out",
     "&:hover": {
-      boxShadow: theme.shadows[3],
+      boxShadow: theme.shadows[2],
       transform: "translateY(-2px)"
     },
     "&::before": {
@@ -134,12 +161,14 @@ const GroupBox = styled(Box)(({ theme, grouptype, level }) => {
       width: "100%",
       height: "100%",
       background: `linear-gradient(135deg, ${alpha(
-        gradientColors.start,
-        0.15
-      )}, ${alpha(gradientColors.end, 0.05)})`,
-      borderRadius: 0,
+        primaryColor,
+        0.08 + level * 0.02
+      )}, ${alpha(primaryColor, 0.02 + level * 0.01)})`,
+      borderRadius: 8,
       zIndex: -1
-    }
+    },
+    // Left border to indicate nesting level
+    borderLeft: `${3 + level}px solid ${alpha(primaryColor, 0.3 + level * 0.1)}`
   };
 });
 
@@ -231,585 +260,42 @@ const OperatorChip = styled(Chip)(({ theme, operatortype }) => {
   };
 });
 
-// Component for a single condition
-const Condition = ({ condition, onChange, onDelete, index }) => {
-  const theme = useTheme();
+// Function to generate a color based on level
+const getNestedColorByLevel = (level, theme) => {
+  const colors = [
+    theme.palette.primary,
+    theme.palette.secondary,
+    theme.palette.info,
+    theme.palette.success,
+    theme.palette.warning
+  ];
 
-  const handleChange = (field, value) => {
-    const updatedCondition = { ...condition, [field]: value };
-    onChange(index, updatedCondition);
-  };
-
-  const getOperatorLabel = (op) => {
-    const labels = {
-      eq: "equals",
-      ne: "not equals",
-      gt: "greater than",
-      lt: "less than",
-      ge: "greater than or equal",
-      le: "less than or equal",
-      contains: "contains",
-      startswith: "starts with",
-      endswith: "ends with",
-      any: "any",
-      all: "all"
-    };
-    return labels[op] || op;
-  };
-
-  return (
-    <ConditionPaper elevation={2} conditiontype="condition">
-      <Box
-        sx={{
-          position: "absolute",
-          top: -10,
-          left: 16,
-          bgcolor: alpha(theme.palette.background.paper, 0.9),
-          px: 1,
-          borderRadius: 0
-        }}
-      >
-        <Typography variant="caption" fontWeight={600} color="text.secondary">
-          Condition {index + 1}
-        </Typography>
-      </Box>
-
-      {/* Visual representation of the condition as a sentence */}
-      <Box
-        sx={{
-          p: 2,
-          mb: 3,
-          borderRadius: 0,
-          bgcolor: alpha(theme.palette.background.default, 0.5),
-          border: `1px dashed ${alpha(theme.palette.divider, 0.6)}`,
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 1
-        }}
-      >
-        <Typography fontWeight={600}>IF</Typography>
-
-        <Chip
-          label={condition.field || "$.Transfer"}
-          size="small"
-          color="primary"
-          sx={{
-            fontWeight: 500,
-            borderRadius: 0
-          }}
-        />
-
-        <Chip
-          label={getOperatorLabel(condition.operator || "eq")}
-          size="small"
-          variant="outlined"
-          sx={{
-            fontWeight: 500,
-            borderRadius: 0,
-            borderColor: alpha(theme.palette.info.main, 0.3),
-            color: theme.palette.info.main,
-            bgcolor: alpha(theme.palette.info.main, 0.05)
-          }}
-        />
-
-        <Chip
-          label={condition.value_prop?.value || "(Value)"}
-          size="small"
-          sx={{
-            fontWeight: 500,
-            borderRadius: 0,
-            bgcolor: alpha(theme.palette.secondary.main, 0.1),
-            color: theme.palette.secondary.main
-          }}
-        />
-      </Box>
-
-      <Grid container spacing={3} alignItems="center">
-        <Grid item xs={12} sm={3}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Field</InputLabel>
-            <StyledSelect
-              value={condition.field || "$.Transfer"}
-              label="Field"
-              onChange={(e) => handleChange("field", e.target.value)}
-            >
-              <MenuItem value="$.Transfer">$.Transfer</MenuItem>
-              <MenuItem value="$.ID">$.ID</MenuItem>
-              <MenuItem value="$.ID_Classic">$.ID_Classic</MenuItem>
-              <MenuItem value="$.POA">$.POA</MenuItem>
-              <MenuItem value="$.StudySavingFund">$.StudySavingFund</MenuItem>
-            </StyledSelect>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} sm={2}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Operator</InputLabel>
-            <StyledSelect
-              value={condition.operator || "eq"}
-              label="Operator"
-              onChange={(e) => handleChange("operator", e.target.value)}
-            >
-              <MenuItem value="eq">equals</MenuItem>
-              <MenuItem value="ne">not equals</MenuItem>
-              <MenuItem value="gt">greater than</MenuItem>
-              <MenuItem value="lt">less than</MenuItem>
-              <MenuItem value="ge">greater than or equal</MenuItem>
-              <MenuItem value="le">less than or equal</MenuItem>
-              <MenuItem value="contains">contains</MenuItem>
-              <MenuItem value="startswith">starts with</MenuItem>
-              <MenuItem value="endswith">ends with</MenuItem>
-              <MenuItem value="any">any</MenuItem>
-              <MenuItem value="all">all</MenuItem>
-            </StyledSelect>
-          </FormControl>
-          <Box sx={{ mt: 1, display: "flex", justifyContent: "center" }}>
-            <OperatorChip
-              label={getOperatorLabel(condition.operator || "eq")}
-              size="small"
-              operatortype={condition.operator || "eq"}
-            />
-          </Box>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Stack spacing={2}>
-            <FormControl fullWidth size="small">
-              <InputLabel>ComparisonType</InputLabel>
-              <StyledSelect
-                value={condition.comparison_prop?.type || "simple"}
-                label="ComparisonType"
-                onChange={(e) => {
-                  const comparisonType = e.target.value;
-                  const comparisonProp = {
-                    type: comparisonType,
-                    name:
-                      comparisonType !== "simple"
-                        ? condition.comparison_prop?.name || ""
-                        : ""
-                  };
-                  handleChange("comparison_prop", comparisonProp);
-                }}
-              >
-                <MenuItem value="simple">simple</MenuItem>
-                <MenuItem value="items">items</MenuItem>
-                <MenuItem value="aggregation">aggregation</MenuItem>
-                <MenuItem value="func">func</MenuItem>
-                <MenuItem value="proc">proc</MenuItem>
-              </StyledSelect>
-            </FormControl>
-
-            {condition.comparison_prop?.type &&
-              condition.comparison_prop.type !== "simple" && (
-                <StyledTextField
-                  fullWidth
-                  label="ComparisonName"
-                  value={condition.comparison_prop?.name || ""}
-                  onChange={(e) => {
-                    const updatedComparisonProp = {
-                      ...condition.comparison_prop,
-                      name: e.target.value
-                    };
-                    handleChange("comparison_prop", updatedComparisonProp);
-                  }}
-                  size="small"
-                  placeholder="Enter comparison name"
-                />
-              )}
-
-            <FormControl fullWidth size="small">
-              <InputLabel>Value Type</InputLabel>
-              <StyledSelect
-                value={condition.value_prop?.type || "const"}
-                label="Value Type"
-                onChange={(e) => {
-                  const valueType = e.target.value;
-                  const valueProp = {
-                    type: valueType,
-                    value: valueType === "const" ? "" : "$.fieldPath",
-                    offset: condition.value_prop?.offset || null
-                  };
-                  handleChange("value_prop", valueProp);
-                }}
-              >
-                <MenuItem value="const">Constant</MenuItem>
-                <MenuItem value="json-path">JSON Path</MenuItem>
-              </StyledSelect>
-            </FormControl>
-
-            <StyledTextField
-              fullWidth
-              label="Value"
-              value={condition.value_prop?.value || ""}
-              onChange={(e) => {
-                const updatedValueProp = {
-                  ...condition.value_prop,
-                  value: e.target.value
-                };
-                handleChange("value_prop", updatedValueProp);
-              }}
-              size="small"
-              placeholder={
-                condition.value_prop?.type === "json-path"
-                  ? "$.fieldPath"
-                  : "value"
-              }
-            />
-
-            <StyledTextField
-              fullWidth
-              label="Offset"
-              type="number"
-              value={condition.value_prop?.offset || ""}
-              onChange={(e) => {
-                const offsetValue =
-                  e.target.value === "" ? null : parseInt(e.target.value, 10);
-                const updatedValueProp = {
-                  ...condition.value_prop,
-                  offset: offsetValue
-                };
-                handleChange("value_prop", updatedValueProp);
-              }}
-              size="small"
-              placeholder="Enter offset value (optional)"
-            />
-          </Stack>
-        </Grid>
-        <Grid item xs={12} sm={1} sx={{ textAlign: "right" }}>
-          <Tooltip title="Delete condition">
-            <IconButton
-              onClick={() => onDelete(index)}
-              color="error"
-              sx={{
-                backgroundColor: alpha(theme.palette.error.main, 0.1),
-                "&:hover": {
-                  backgroundColor: alpha(theme.palette.error.main, 0.2)
-                }
-              }}
-            >
-              <DeleteIcon />
-            </IconButton>
-          </Tooltip>
-        </Grid>
-      </Grid>
-    </ConditionPaper>
-  );
-};
-
-// Component for a group of conditions (AND/OR)
-const ConditionGroup = ({ group, onChange, onDelete, level = 0 }) => {
-  const theme = useTheme();
-
-  const addCondition = () => {
-    const newCondition = {
-      field: "$.Transfer", // Default value for field dropdown
-      operator: "eq",
-      comparison_prop: { type: "simple", name: "" },
-      value_prop: { type: "const", value: "", offset: null }
-    };
-
-    // If this is a NOT group, replace any existing conditions with the new one
-    if (group.type === "NOT") {
-      onChange({ ...group, conditions: [newCondition] });
-    } else {
-      const updatedConditions = [...group.conditions, newCondition];
-      onChange({ ...group, conditions: updatedConditions });
-    }
-  };
-
-  const addGroup = () => {
-    const newGroup = {
-      type: "AND",
-      conditions: []
-    };
-
-    // If this is a NOT group, replace any existing conditions with the new one
-    if (group.type === "NOT") {
-      onChange({ ...group, conditions: [newGroup] });
-    } else {
-      const updatedConditions = [...group.conditions, newGroup];
-      onChange({ ...group, conditions: updatedConditions });
-    }
-  };
-
-  const updateCondition = (index, updatedItem) => {
-    const updatedConditions = [...group.conditions];
-    updatedConditions[index] = updatedItem;
-    onChange({ ...group, conditions: updatedConditions });
-  };
-
-  const deleteCondition = (index) => {
-    const updatedConditions = group.conditions.filter((_, i) => i !== index);
-    onChange({ ...group, conditions: updatedConditions });
-  };
-
-  const changeGroupType = (newType) => {
-    // If changing to NOT and we have multiple conditions, keep only the first one
-    if (newType === "NOT" && group.conditions.length > 1) {
-      onChange({
-        ...group,
-        type: newType,
-        conditions: [group.conditions[0]]
-      });
-    } else {
-      onChange({ ...group, type: newType });
-    }
-  };
-
-  // Get the appropriate color for the group type
-  const getGroupColor = () => {
-    switch (group.type) {
-      case "AND":
-        return theme.palette.primary.main;
-      case "OR":
-        return theme.palette.secondary.main;
-      case "NOT":
-        return theme.palette.error.main;
-      default:
-        return theme.palette.grey[600];
-    }
-  };
-
-  return (
-    <GroupBox grouptype={group.type} level={level}>
-      <Box
-        sx={{
-          position: "absolute",
-          top: -12,
-          left: 20,
-          bgcolor: "background.paper",
-          px: 1.5,
-          py: 0.5,
-          borderRadius: 0,
-          boxShadow: `0 2px 4px ${alpha("#000", 0.05)}`,
-          border: `1px solid ${alpha(getGroupColor(), 0.3)}`,
-          zIndex: 1
-        }}
-      >
-        <Typography
-          variant="subtitle2"
-          sx={{
-            fontWeight: 600,
-            color: getGroupColor(),
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5
-          }}
-        >
-          <Box
-            component="span"
-            sx={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              bgcolor: getGroupColor(),
-              display: "inline-block",
-              mr: 0.5
-            }}
-          />
-          {group.type} Group
-        </Typography>
-      </Box>
-
-      <Box display="flex" alignItems="center" mb={3} mt={1}>
-        <FormControl size="small" sx={{ minWidth: 120, mr: 2 }}>
-          <InputLabel>Group Type</InputLabel>
-          <StyledSelect
-            value={group.type}
-            label="Group Type"
-            onChange={(e) => changeGroupType(e.target.value)}
-          >
-            <MenuItem value="AND">AND</MenuItem>
-            <MenuItem value="OR">OR</MenuItem>
-            <MenuItem value="NOT">NOT</MenuItem>
-          </StyledSelect>
-        </FormControl>
-
-        {level > 0 && (
-          <Tooltip title="Delete group">
-            <IconButton
-              onClick={onDelete}
-              color="error"
-              size="small"
-              sx={{
-                ml: "auto",
-                backgroundColor: alpha(theme.palette.error.main, 0.1),
-                "&:hover": {
-                  backgroundColor: alpha(theme.palette.error.main, 0.2)
-                }
-              }}
-            >
-              <DeleteIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
-
-      <Divider sx={{ mb: 3 }} />
-
-      {group.type === "NOT" && (
-        <Alert
-          severity="info"
-          icon={<ErrorOutlineIcon />}
-          sx={{
-            mb: 3,
-            alignItems: "center",
-            borderRadius: 0,
-            backgroundColor: alpha(theme.palette.info.main, 0.1),
-            color: theme.palette.info.dark,
-            "& .MuiAlert-icon": {
-              color: theme.palette.info.main
-            }
-          }}
-        >
-          The NOT group can only contain a single condition or group. Adding a
-          new item will replace the current one.
-        </Alert>
-      )}
-
-      {group.conditions.length === 0 ? (
-        <Alert
-          severity="info"
-          icon={<LightbulbIcon />}
-          sx={{
-            mb: 3,
-            alignItems: "center",
-            borderRadius: 0,
-            backgroundColor: alpha(theme.palette.info.main, 0.1),
-            color: theme.palette.info.dark,
-            "& .MuiAlert-icon": {
-              color: theme.palette.info.main
-            }
-          }}
-        >
-          This group is empty. Add conditions or nested groups using the buttons
-          below.
-        </Alert>
-      ) : (
-        <Box
-          sx={{
-            position: "relative",
-            pl: group.conditions.length > 1 ? 4 : 0,
-            "&::before":
-              group.conditions.length > 1
-                ? {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    bottom: 0,
-                    left: 12,
-                    width: 2,
-                    backgroundColor: alpha(getGroupColor(), 0.3),
-                    borderRadius: 0
-                  }
-                : {}
-          }}
-        >
-          {group.conditions.map((condition, index) => (
-            <Box key={index} sx={{ position: "relative" }}>
-              {index > 0 && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: "-12px",
-                    left: -30,
-                    width: 24,
-                    height: 24,
-                    bgcolor: alpha(getGroupColor(), 0.1),
-                    color: getGroupColor(),
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                    border: `1px solid ${alpha(getGroupColor(), 0.3)}`,
-                    zIndex: 2
-                  }}
-                >
-                  {group.type}
-                </Box>
-              )}
-
-              {condition.type ? (
-                <ConditionGroup
-                  group={condition}
-                  onChange={(updatedGroup) =>
-                    updateCondition(index, updatedGroup)
-                  }
-                  onDelete={() => deleteCondition(index)}
-                  level={level + 1}
-                />
-              ) : (
-                <Condition
-                  condition={condition}
-                  onChange={updateCondition}
-                  onDelete={deleteCondition}
-                  index={index}
-                />
-              )}
-            </Box>
-          ))}
-        </Box>
-      )}
-
-      <Box mt={3} display="flex" gap={2} flexWrap="wrap">
-        <ActionButton
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={addCondition}
-          size="small"
-          color="primary"
-          sx={{
-            borderWidth: "1.5px",
-            px: 2,
-            py: 1
-          }}
-        >
-          Add Condition
-        </ActionButton>
-        <ActionButton
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={addGroup}
-          size="small"
-          color="secondary"
-          sx={{
-            borderWidth: "1.5px",
-            px: 2,
-            py: 1
-          }}
-        >
-          Add Nested Group
-        </ActionButton>
-      </Box>
-    </GroupBox>
-  );
+  return colors[level % colors.length];
 };
 
 // Main Rule Builder component
 const RuleBuilder = ({ onSave }) => {
   const theme = useTheme();
-  const [businessLogic, setBusinessLogic] = useState({
+  const [ruleName, setRuleName] = useState("");
+  const [ruleDescription, setRuleDescription] = useState("");
+  const [rootGroup, setRootGroup] = useState({
     type: "AND",
+    name: "All Conditions",
     conditions: []
   });
-
-  const [ruleName, setRuleName] = useState("");
-  const [jsonOutput, setJsonOutput] = useState("");
-  const [error, setError] = useState("");
-  const [previewTab, setPreviewTab] = useState(0);
-  const [showLivePreview, setShowLivePreview] = useState(true);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState(0);
+  const [splitView, setSplitView] = useState(true); // Default to split view for better UX
+  const [sidebarWidth, setSidebarWidth] = useState(50); // Percentage
+  const [showValidationWarnings, setShowValidationWarnings] = useState(false);
 
+  // Generate JSON representation of the rule
   const generateJson = () => {
-    try {
-      const output = JSON.stringify({ business_logic: businessLogic }, null, 2);
-      setJsonOutput(output);
-      setError("");
-      setPreviewDialogOpen(true);
-    } catch (err) {
-      setError("Failed to generate JSON: " + err.message);
-    }
+    return {
+      name: ruleName,
+      description: ruleDescription,
+      businessLogic: rootGroup
+    };
   };
 
   const handlePreviewTabChange = (event, newValue) => {
@@ -820,349 +306,477 @@ const RuleBuilder = ({ onSave }) => {
     setPreviewDialogOpen(false);
   };
 
-  const handleSave = () => {
+  // Validation function to check if the rule is complete
+  const validateRule = () => {
+    const issues = [];
+
     if (!ruleName.trim()) {
-      setError("Please provide a rule name before saving");
+      issues.push("Rule name is required");
+    }
+
+    if (rootGroup.conditions.length === 0) {
+      issues.push("At least one condition is required");
+    }
+
+    // Check for empty conditions
+    const checkEmptyConditions = (group) => {
+      if (!group || !group.conditions) return;
+
+      group.conditions.forEach((item) => {
+        if (item.type) {
+          // This is a group
+          if (item.conditions.length === 0) {
+            issues.push(`Empty ${item.type} group found`);
+          }
+          checkEmptyConditions(item);
+        } else {
+          // This is a condition
+          if (!item.field || !item.operator || !item.value_prop?.value) {
+            issues.push("Incomplete condition found");
+          }
+
+          // Check if ComparisonName is provided when ComparisonType is not 'simple'
+          if (
+            item.comparison_prop?.type &&
+            item.comparison_prop.type !== "simple" &&
+            !item.comparison_prop.name
+          ) {
+            issues.push(
+              "Comparison Name is required when Comparison Type is not 'simple'"
+            );
+          }
+        }
+      });
+    };
+
+    checkEmptyConditions(rootGroup);
+
+    return {
+      isValid: issues.length === 0,
+      issues
+    };
+  };
+
+  const handleSave = () => {
+    const { isValid, issues } = validateRule();
+
+    if (!isValid) {
+      setShowValidationWarnings(true);
       return;
     }
 
-    if (businessLogic.conditions.length === 0) {
-      setError("Cannot save an empty rule. Please add at least one condition.");
-      return;
-    }
+    onSave(generateJson());
 
-    // Call the onSave callback from parent component
-    if (onSave) {
-      onSave({
-        ...businessLogic,
-        name: ruleName
-      });
+    // Show success feedback
+    // This could be replaced with a snackbar component for better UX
+    alert("Rule saved successfully!");
+  };
 
-      // Clear form or reset to initial state
-      setRuleName("");
-      setJsonOutput("");
-      setBusinessLogic({
-        type: "AND",
-        conditions: []
-      });
-      setError("");
+  const toggleSplitView = () => {
+    setSplitView(!splitView);
+  };
+
+  const handleResizeMouseDown = (e) => {
+    e.preventDefault();
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    const container = document.getElementById("rule-builder-container");
+    if (container) {
+      const containerRect = container.getBoundingClientRect();
+      const newWidth =
+        ((e.clientX - containerRect.left) / containerRect.width) * 100;
+      // Limit the width between 30% and 70%
+      if (newWidth >= 30 && newWidth <= 70) {
+        setSidebarWidth(newWidth);
+      }
     }
+  };
+
+  const handleMouseUp = () => {
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
   };
 
   const resetBuilder = () => {
-    setBusinessLogic({
-      type: "AND",
-      conditions: []
-    });
-    setJsonOutput("");
-    setRuleName("");
-    setError("");
+    if (
+      window.confirm(
+        "Are you sure you want to reset the rule builder? This will clear all your conditions."
+      )
+    ) {
+      setRuleName("");
+      setRuleDescription("");
+      setRootGroup({
+        type: "AND",
+        name: "All Conditions",
+        conditions: []
+      });
+      setShowValidationWarnings(false);
+    }
   };
 
+  // Get validation for display
+  const validationResult = validateRule();
+
   return (
-    <Box sx={{ maxWidth: 1200, mx: "auto" }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={showLivePreview ? 8 : 12}>
-          <Card
-            elevation={3}
+    <Card
+      elevation={0}
+      sx={{
+        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        borderRadius: theme.shape.borderRadius,
+        height: "100%",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      <CardHeader
+        title={
+          <Box display="flex" alignItems="center">
+            <Typography variant="h5" fontWeight={700} sx={{ mr: 2 }}>
+              Business Rule Builder
+            </Typography>
+            {showValidationWarnings && !validationResult.isValid && (
+              <Chip
+                label={`${validationResult.issues.length} issue${
+                  validationResult.issues.length !== 1 ? "s" : ""
+                }`}
+                color="error"
+                size="small"
+                icon={<ErrorOutlineIcon />}
+              />
+            )}
+          </Box>
+        }
+        subheader="Create complex business logic rules with conditions and groups"
+        action={
+          <Box>
+            <Tooltip
+              title={splitView ? "Hide visualization" : "Show visualization"}
+            >
+              <IconButton
+                onClick={toggleSplitView}
+                color={splitView ? "primary" : "default"}
+                sx={{
+                  mr: 1,
+                  bgcolor: splitView
+                    ? alpha(theme.palette.primary.main, 0.1)
+                    : "transparent"
+                }}
+              >
+                <AccountTreeIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Preview rule">
+              <IconButton onClick={() => setPreviewDialogOpen(true)}>
+                <VisibilityIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Reset builder">
+              <IconButton color="error" onClick={resetBuilder}>
+                <RestartAltIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
+        sx={{
+          pb: 0,
+          "& .MuiCardHeader-action": {
+            margin: 0
+          }
+        }}
+      />
+
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          overflowY: "auto",
+          p: 3,
+          height: "100%",
+          display: "flex",
+          flexDirection: "column"
+        }}
+      >
+        <Box
+          id="rule-builder-container"
+          sx={{
+            display: "flex",
+            height: "100%",
+            gap: 2,
+            flexDirection: splitView ? "row" : "column",
+            position: "relative"
+          }}
+        >
+          <Box
             sx={{
-              mb: 4,
-              overflow: "visible",
-              borderRadius: 0,
-              border: `1px solid ${alpha(theme.palette.divider, 0.7)}`,
-              boxShadow: `0 6px 16px -4px ${alpha(
-                theme.palette.primary.main,
-                0.1
-              )}`
+              width: splitView ? `${sidebarWidth}%` : "100%",
+              height: "100%",
+              overflowY: "auto",
+              pr: splitView ? 2 : 0
             }}
           >
-            <CardHeader
-              title={
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between"
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    Create New Business Rule
-                  </Typography>
-                  <Tooltip
-                    title={
-                      showLivePreview
-                        ? "Hide live preview"
-                        : "Show live preview"
-                    }
-                  >
-                    <IconButton
-                      color="primary"
-                      onClick={() => setShowLivePreview(!showLivePreview)}
-                      sx={{
-                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                        "&:hover": {
-                          backgroundColor: alpha(
-                            theme.palette.primary.main,
-                            0.2
-                          )
-                        }
-                      }}
-                    >
-                      <AccountTreeIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              }
-              subheader={
-                <Typography variant="body2" color="text.secondary">
-                  Define conditions and logic for your business rule
-                </Typography>
-              }
-              sx={{
-                pb: 1,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                "& .MuiCardHeader-content": {
-                  overflow: "visible",
-                  width: "100%"
-                }
-              }}
-            />
-            <CardContent sx={{ pt: 3 }}>
+            <Box mb={3}>
               <StyledTextField
-                fullWidth
                 label="Rule Name"
+                variant="outlined"
+                fullWidth
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
-                sx={{ mb: 4 }}
                 placeholder="Enter a descriptive name for this rule"
-                required
+                error={showValidationWarnings && !ruleName.trim()}
+                helperText={
+                  showValidationWarnings && !ruleName.trim()
+                    ? "Rule name is required"
+                    : ""
+                }
                 InputProps={{
                   sx: {
-                    borderRadius: 0,
-                    fontSize: "1rem",
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                      borderColor: theme.palette.primary.main,
-                      borderWidth: 2
-                    }
+                    borderRadius: 8,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.6)
                   }
                 }}
               />
+            </Box>
 
-              <ConditionGroup
-                group={businessLogic}
-                onChange={setBusinessLogic}
-                onDelete={() => {}}
-              />
-
-              {error && (
-                <Alert
-                  severity="error"
-                  sx={{
-                    mt: 3,
-                    borderRadius: 0,
-                    backgroundColor: alpha(theme.palette.error.main, 0.1),
-                    color: theme.palette.error.dark,
-                    "& .MuiAlert-icon": {
-                      color: theme.palette.error.main
-                    }
-                  }}
-                >
-                  {error}
-                </Alert>
-              )}
-            </CardContent>
-            <CardActions sx={{ justifyContent: "flex-end", p: 3, pt: 1 }}>
-              <ActionButton
+            <Box mb={3}>
+              <StyledTextField
+                label="Rule Description (Optional)"
                 variant="outlined"
-                onClick={resetBuilder}
-                sx={{ mr: 2 }}
-                startIcon={<RestartAltIcon />}
-              >
-                Reset
-              </ActionButton>
-              <ActionButton
-                variant="outlined"
-                onClick={generateJson}
-                sx={{ mr: 2 }}
-                startIcon={<VisibilityIcon />}
-              >
-                Preview
-              </ActionButton>
-              <ActionButton
-                variant="contained"
-                color="primary"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                sx={{
-                  px: 3,
-                  py: 1
+                fullWidth
+                multiline
+                rows={2}
+                value={ruleDescription}
+                onChange={(e) => setRuleDescription(e.target.value)}
+                placeholder="Briefly describe the purpose of this rule"
+                InputProps={{
+                  sx: {
+                    borderRadius: 8,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.6)
+                  }
                 }}
-              >
-                Save Rule
-              </ActionButton>
-            </CardActions>
-          </Card>
+              />
+            </Box>
 
-          <Dialog
-            open={previewDialogOpen}
-            onClose={handleClosePreviewDialog}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-              sx: {
-                borderRadius: 0,
-                overflow: "hidden"
-              }
-            }}
-          >
-            <DialogTitle sx={{ p: 0 }}>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-                <Tabs
-                  value={previewTab}
-                  onChange={handlePreviewTabChange}
-                  textColor="primary"
-                  indicatorColor="primary"
+            {showValidationWarnings && validationResult.issues.length > 0 && (
+              <Alert
+                severity="warning"
+                sx={{ mb: 2, borderRadius: 2 }}
+                action={
+                  <IconButton
+                    aria-label="close"
+                    color="inherit"
+                    size="small"
+                    onClick={() => setShowValidationWarnings(false)}
+                  >
+                    <CloseIcon fontSize="inherit" />
+                  </IconButton>
+                }
+              >
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 600, mb: 0.5 }}
                 >
-                  <Tab
-                    icon={<CodeIcon />}
-                    iconPosition="start"
-                    label="JSON"
-                    sx={{
-                      fontWeight: 600,
-                      textTransform: "none"
-                    }}
-                  />
-                  <Tab
-                    icon={<AccountTreeIcon />}
-                    iconPosition="start"
-                    label="Tree View"
-                    sx={{
-                      fontWeight: 600,
-                      textTransform: "none"
-                    }}
-                  />
-                </Tabs>
-              </Box>
-            </DialogTitle>
-            <DialogContent sx={{ p: 0 }}>
-              <Box sx={{ display: previewTab === 0 ? "block" : "none" }}>
-                <Paper
-                  sx={{
-                    p: 3,
-                    maxHeight: 500,
-                    overflow: "auto",
-                    backgroundColor: alpha(theme.palette.primary.main, 0.03),
-                    borderRadius: 0,
-                    fontFamily: '"JetBrains Mono", monospace',
-                    "& pre": {
-                      margin: 0,
-                      fontFamily: "inherit",
-                      fontSize: "0.875rem",
-                      color: theme.palette.text.primary
-                    }
-                  }}
-                >
-                  <pre>{jsonOutput}</pre>
-                </Paper>
-              </Box>
+                  Please fix the following issues:
+                </Typography>
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationResult.issues.map((issue, index) => (
+                    <li key={index}>
+                      <Typography variant="body2">{issue}</Typography>
+                    </li>
+                  ))}
+                </ul>
+              </Alert>
+            )}
+
+            <ConditionGroup
+              group={rootGroup}
+              onChange={setRootGroup}
+              level={0}
+            />
+          </Box>
+
+          {splitView && (
+            <>
               <Box
                 sx={{
-                  display: previewTab === 1 ? "block" : "none",
-                  p: 2,
-                  height: 500,
-                  overflow: "auto",
-                  backgroundColor: alpha(theme.palette.background.paper, 0.5)
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `${sidebarWidth}%`,
+                  width: 12,
+                  transform: "translateX(-50%)",
+                  cursor: "col-resize",
+                  zIndex: 10,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  "&:hover": {
+                    "&::after": {
+                      backgroundColor: theme.palette.primary.main
+                    }
+                  },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    top: "30%",
+                    bottom: "30%",
+                    left: "50%",
+                    width: 4,
+                    backgroundColor: alpha(theme.palette.divider, 0.5),
+                    borderRadius: 2,
+                    transform: "translateX(-50%)",
+                    transition: "background-color 0.2s"
+                  }
                 }}
+                onMouseDown={handleResizeMouseDown}
               >
-                <LogicTreeView businessLogic={businessLogic} />
+                <DragHandleIcon
+                  sx={{
+                    color: alpha(theme.palette.text.secondary, 0.4),
+                    position: "absolute",
+                    zIndex: 1,
+                    fontSize: "1.2rem",
+                    transform: "rotate(90deg)",
+                    transition: "color 0.2s",
+                    "&:hover": {
+                      color: theme.palette.primary.main
+                    }
+                  }}
+                />
               </Box>
-            </DialogContent>
-            <DialogActions sx={{ p: 2 }}>
-              <ActionButton
-                variant="outlined"
-                onClick={handleClosePreviewDialog}
-              >
-                Close
-              </ActionButton>
-            </DialogActions>
-          </Dialog>
-        </Grid>
 
-        {showLivePreview && (
-          <Grid item xs={12} md={4}>
-            <Card
-              elevation={2}
-              sx={{
-                position: { md: "sticky" },
-                top: { md: 24 },
-                height: "fit-content",
-                borderRadius: 0,
-                overflow: "hidden",
-                mb: 4,
-                border: `1px solid ${alpha(theme.palette.divider, 0.7)}`
-              }}
-            >
-              <CardHeader
-                title={
-                  <Typography variant="h6" fontWeight={600}>
-                    Live Tree Visualization
-                  </Typography>
-                }
+              <Box
                 sx={{
-                  pb: 1,
-                  borderBottom: `1px solid ${alpha(theme.palette.divider, 0.8)}`
+                  width: `${100 - sidebarWidth}%`,
+                  height: "100%",
+                  overflowY: "auto",
+                  pl: 2,
+                  borderLeft: `1px dashed ${alpha(theme.palette.divider, 0.3)}`
                 }}
-              />
-              <CardContent sx={{ p: 0 }}>
-                <Box
+              >
+                <Paper
+                  elevation={0}
                   sx={{
                     p: 2,
-                    minHeight: 400,
-                    maxHeight: { xs: 400, md: 600 },
-                    overflow: "auto",
-                    backgroundColor:
-                      theme.palette.mode === "dark"
-                        ? alpha(theme.palette.background.default, 0.6)
-                        : alpha(theme.palette.background.paper, 0.5)
+                    height: "100%",
+                    backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    borderRadius: theme.shape.borderRadius
                   }}
                 >
-                  {businessLogic.conditions.length === 0 ? (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        height: 300
-                      }}
-                    >
-                      <AccountTreeIcon
-                        sx={{
-                          fontSize: 60,
-                          color: alpha(theme.palette.primary.main, 0.3),
-                          mb: 2
-                        }}
-                      />
-                      <Typography
-                        color="text.secondary"
-                        variant="body2"
-                        textAlign="center"
-                        sx={{ maxWidth: 250 }}
-                      >
-                        Your rule visualization will appear here as you build
-                        your business logic
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <LogicTreeView businessLogic={businessLogic} />
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
-      </Grid>
-    </Box>
+                  <LogicTreeView businessLogic={rootGroup} />
+                </Paper>
+              </Box>
+            </>
+          )}
+        </Box>
+      </CardContent>
+
+      <CardActions
+        sx={{
+          p: 3,
+          pt: 2,
+          borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          justifyContent: "flex-end"
+        }}
+      >
+        <Button
+          variant="outlined"
+          onClick={resetBuilder}
+          startIcon={<RestartAltIcon />}
+          sx={{
+            borderRadius: 8,
+            textTransform: "none",
+            borderWidth: "1.5px",
+            "&:hover": {
+              borderWidth: "1.5px"
+            }
+          }}
+        >
+          Reset
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSave}
+          startIcon={<SaveIcon />}
+          disableElevation
+          sx={{
+            ml: 2,
+            borderRadius: 8,
+            textTransform: "none",
+            backgroundColor: theme.palette.primary.main,
+            "&:hover": {
+              backgroundColor: theme.palette.primary.dark
+            }
+          }}
+        >
+          Save Rule
+        </Button>
+      </CardActions>
+
+      <Dialog
+        open={previewDialogOpen}
+        onClose={handleClosePreviewDialog}
+        fullWidth
+        maxWidth="md"
+        sx={{
+          "& .MuiDialog-paper": {
+            borderRadius: theme.shape.borderRadius
+          }
+        }}
+      >
+        <DialogTitle>
+          <Typography variant="h6" fontWeight={600}>
+            Rule Preview
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Tabs
+            value={previewTab}
+            onChange={handlePreviewTabChange}
+            sx={{ mb: 2 }}
+          >
+            <Tab
+              label="Visualization"
+              icon={<AccountTreeIcon />}
+              iconPosition="start"
+            />
+            <Tab label="JSON" icon={<CodeIcon />} iconPosition="start" />
+          </Tabs>
+
+          <Box sx={{ p: 1 }}>
+            {previewTab === 0 ? (
+              <LogicTreeView businessLogic={rootGroup} />
+            ) : (
+              <Box
+                component="pre"
+                sx={{
+                  p: 2,
+                  borderRadius: theme.shape.borderRadius,
+                  backgroundColor: alpha(theme.palette.common.black, 0.03),
+                  fontFamily: "monospace",
+                  fontSize: "0.875rem",
+                  overflowX: "auto",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                }}
+              >
+                {JSON.stringify(generateJson(), null, 2)}
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleClosePreviewDialog}
+            sx={{ textTransform: "none" }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Card>
   );
 };
 
